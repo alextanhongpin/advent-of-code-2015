@@ -22,20 +22,34 @@ func init() {
 func main() {
 	fmt.Println("part 1:", sum(input)) // 156366
 
+	/*
+		input = `[1,{"c":"red","b":2},3]`         // 4
+		input = `{"d":"red","e":[1,2,3,4],"f":5}` // 0
+		input = `[1,"red",5]`                     // 6
+		input = `[1,2,3]`                         // 6
+	*/
+
 	res := ""
 	for _, ch := range input {
 		switch ch {
 		case '}':
 			j := strings.LastIndex(res, "{")
+			// Our strategy is simple - find the last object.
+			// If it has red, discard it, otherwise, unnest it so that it belongs to the same level
+			// as the parent.
+			// Parent object may value "red", which will then be discarded later.
 			obj := res[j+1:]
 			if strings.Contains(obj, `:"red"`) {
 				res = res[:j]
+			} else {
+				res = res[:j]
+				res += obj
 			}
 		default:
 			res += string(ch)
 		}
 	}
-	fmt.Println("part 2:", sum(res))
+	fmt.Println("part 2:", sum(res)) // 96852
 }
 
 func sum(input string) int {
