@@ -21,8 +21,8 @@ func init() {
 }
 
 func main() {
-	t := 1000
-	lines := strings.Split(example, "\n")
+	t := 2503
+	lines := strings.Split(input, "\n")
 	reindeers := make([]reindeer, len(lines))
 
 	var maxdist int
@@ -51,7 +51,6 @@ func main() {
 			}
 			bestReindeers[dist] = append(bestReindeers[dist], i)
 		}
-		fmt.Println(t0, bestDist, bestReindeers)
 		for _, r := range bestReindeers[bestDist] {
 			scores[r]++
 		}
@@ -66,12 +65,15 @@ type reindeer struct {
 	burst int
 }
 
-func (r reindeer) distance(seconds int) int {
-	e := seconds / (r.rest + r.burst)
-	if seconds%(r.rest+r.burst) >= r.burst {
-		e++
+func (r reindeer) distance(t0 int) int {
+	secondsPerIter := (r.rest + r.burst)
+	iter := t0 / secondsPerIter
+
+	secondsElapsed := t0 - iter*secondsPerIter
+	if secondsElapsed >= r.burst {
+		secondsElapsed = r.burst
 	}
-	return e * r.speed * r.burst
+	return (iter*r.burst + secondsElapsed) * r.speed
 }
 
 func toInt(s string) int {
