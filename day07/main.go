@@ -10,43 +10,72 @@ import (
 
 func main() {
 	res := make(map[string]int)
-	fmt.Println(logicGate(res, example))
-	res = make(map[string]int)
 	for {
 		logicGate(res, input)
-		if res["a"] != 0 {
+		if _, ok := res["a"]; ok {
 			break
 		}
 	}
-	fmt.Println(res["a"]) // 32769
-	fmt.Println(res)
+	a := res["a"]
+	fmt.Println("part 1:", a) // 3176
+
+	res = make(map[string]int)
+	res["b"] = a
+	for {
+		logicGate(res, input)
+		if _, ok := res["a"]; ok {
+			break
+		}
+	}
+	fmt.Println("part 2:", res["a"]) // 14710
 }
 
 func logicGate(res map[string]int, input string) int {
 	input = strings.TrimSpace(input)
 	lines := strings.Split(input, "\n")
+
 	for _, line := range lines {
 		parts := strings.Split(line, " -> ")
 		instr, out := parts[0], parts[1]
 		parts = strings.Fields(instr)
 
-		parseVar := func(in string) int {
+		parseVar := func(in string) (int, bool) {
 			if isInt(in) {
-				return toInt(in)
+				return toInt(in), true
 			}
-			return res[in]
+			n, ok := res[in]
+			return n, ok
+		}
+		if _, ok := res[out]; ok {
+			continue
 		}
 
 		switch len(parts) {
 		case 1:
-			res[out] = parseVar(parts[0])
+			v, ok := parseVar(parts[0])
+			if !ok {
+				continue
+			}
+			res[out] = v
 		case 2:
 			if parts[0] != "NOT" {
 				panic("unhandled input: " + line)
 			}
-			res[out] = ^parseVar(parts[1])
+			v, ok := parseVar(parts[1])
+			if !ok {
+				continue
+			}
+
+			res[out] = ^v
 		case 3:
-			lhs, rhs := parseVar(parts[0]), parseVar(parts[2])
+			lhs, ok := parseVar(parts[0])
+			if !ok {
+				continue
+			}
+			rhs, ok := parseVar(parts[2])
+			if !ok {
+				continue
+			}
 			switch parts[1] {
 			case "AND":
 				res[out] = lhs & rhs
