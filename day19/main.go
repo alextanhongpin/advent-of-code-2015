@@ -3,8 +3,8 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -17,38 +17,25 @@ func main() {
 func fabricateMedicine(input string) int {
 	target, m := parse(input)
 	invm := make([][2]string, len(m))
-	for i, kv := range m {
-		invm[i] = [2]string{kv[1], kv[0]}
+	// Inverted map: Instead of making the strings longer, we focus on the opposite.
+	for i := range m {
+		invm[i] = [2]string{m[i][1], m[i][0]}
 	}
-	dp := make(map[string]int)
-	var replace func(string, int) int
-	replace = func(medicine string, steps int) int {
-		if len(medicine) > len(target) {
-			return 0
-		}
-		if medicine == "e" {
-			fmt.Println("steps", steps)
-			return steps
-		}
-		if steps, ok := dp[medicine]; ok {
-			return steps
-		}
-		minSteps := math.MaxInt
-		for molecule := range distinctMolecules(medicine, invm) {
-			if _, ok := dp[molecule]; !ok {
-				dp[molecule] = replace(molecule, steps+1)
-			}
+	pq := make(PriorityQueue, 1, 1e3)
+	pq[0] = &Item{value: target}
+	heap.Init(&pq)
 
-			v := dp[molecule]
-			if v < minSteps {
-				minSteps = v
+	for pq.Len() > 0 {
+		item := heap.Pop(&pq).(*Item)
+		molecules := distinctMolecules(item.value, invm)
+		for m := range molecules {
+			if m == "e" {
+				return item.steps + 1
 			}
+			heap.Push(&pq, &Item{value: m, steps: item.steps + 1})
 		}
-		dp[medicine] = minSteps
-		return minSteps
 	}
-
-	return replace(target, 0)
+	return -1
 }
 
 func distinctMolecules(start string, m [][2]string) map[string]bool {
@@ -64,6 +51,40 @@ func distinctMolecules(start string, m [][2]string) map[string]bool {
 		}
 	}
 	return unq
+}
+
+// An Item is something we manage in a priority queue.
+type Item struct {
+	value string // The value of the item; arbitrary.
+	steps int
+}
+
+// A PriorityQueue implements heap.Interface and holds Items.
+type PriorityQueue []*Item
+
+func (pq PriorityQueue) Len() int { return len(pq) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
+	return len(pq[i].value) < len(pq[j].value)
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	item := x.(*Item)
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil // avoid memory leak
+	*pq = old[0 : n-1]
+	return item
 }
 
 var example = `H => HO
